@@ -1,0 +1,24 @@
+# Local install of the addyosmani/agent-skills plugin (see README).
+# It's a separate git clone — keep it out of this repo so it can self-update.
+agent-skills/
+
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Database (local dev)
+*.db
+*.db-journal
+
+# Misc
+.DS_Store
+*.log
