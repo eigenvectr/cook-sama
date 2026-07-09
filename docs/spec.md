@@ -1,69 +1,95 @@
-# Spec: Cook-sama — Personal Recipe Tracking Website
+# Spec: Cook-sama — Recipe & Baking Tracking Website
+
+> Living document. Rev 2 (2026-07-09): expanded from "cooking" to cooking **and
+> baking**; added parallel/meanwhile steps, passive waits, per-step caveats,
+> step photos, and AI photo-import (OCR + caveat processing). Reference test
+> case: `docs/recipes/brown-butter-chocolate-chip-cookies.md`.
 
 ## Objective
 
-Build a website where the owner tracks the recipes they cook so that they can
-**recreate them reliably** and **share them with friends**.
+Build a website where the owner tracks recipes — cooking *and* baking — so
+that they can **recreate them reliably** (including the caveats a plain recipe
+can't express) and **share them with friends**.
 
 **Who uses it:**
 
-- **The owner** (single user): adds and edits recipes, logs each time they cook
-  one, tweaks and improves recipes over time.
+- **The owner** (single user): captures recipes — by typing them in, or by
+  photographing a source (Instagram screenshot, handwritten card, packaging)
+  and letting AI extract it; logs each bake/cook; refines recipes over time.
 - **Friends** (anonymous visitors): open a shared link, read the recipe, scale
-  it to their servings, print it. No account, no login.
+  it, print it. No account, no login.
+
+**The motivating example** (see `docs/recipes/brown-butter-chocolate-chip-cookies.md`):
+capturing how the owner's sister makes brown-butter chocolate chip cookies.
+The source is an Instagram screenshot, but her actual method has structure a
+flat step list can't hold:
+
+- *Parallelism* — sift and mix the dry ingredients **while** the butter browns.
+- *Passive waits* — the browned butter must **cool** (~15 min) before the egg
+  stage; the dough **chills** 1–3 hours.
+- *Technique caveats* — whip the egg until foamy *first*, unlike the source
+  which creams butter and sugar.
+- *Substitutions* — "espresso powder" is really a C7 Vietnamese instant
+  coffee packet.
 
 **User stories:**
 
 1. As the owner, I can create a recipe with structured ingredients
-   (quantity / unit / name), ordered steps, servings, times, tags, photos, a
-   source URL, and free-form notes.
-2. As the owner, I can find a recipe fast (search by title/ingredient, filter
-   by tag) — "what was that noodle thing I made in March?"
-3. As a cook (owner or friend), I can open **cook mode**: large-type
-   step-by-step view with ingredient checkboxes and the screen kept awake,
-   usable one-handed on a phone in the kitchen.
-4. As a cook, I can **scale servings** and every ingredient quantity updates.
-5. As the owner, after cooking I can add a **cook log** entry (date, rating,
-   "what I'd change next time") so the recipe improves each iteration.
-6. As the owner, I can share a recipe via an **unlisted link**; anyone with the
-   link can view and print it, but it doesn't appear in search engines or to
-   people without the link.
-7. As a friend, I can view a shared recipe with zero friction and copy the
-   ingredient list in one tap.
+   (quantity / unit / name / note, in groups), ordered steps, servings, times,
+   tags, photos, a source URL, and free-form notes.
+2. As the owner, I can photograph a recipe (screenshot, card, package label),
+   add my spoken/typed caveats, and have **AI extract a complete structured
+   draft** — ingredients, steps with parallel/wait structure, caveats — which
+   I review and edit before publishing. Source photos stay attached for
+   provenance.
+3. As the owner, steps can be marked **"meanwhile"** (runs alongside the
+   previous step) or **"wait"** (passive: cooling, chilling, proofing, with a
+   timer), and any step can carry a highlighted **caveat**.
+4. As the owner, I can attach **photos to individual steps** (what "foamy"
+   looks like, what properly browned butter looks like) and a hero image.
+5. As a cook (owner or friend), **cook mode** walks me step-by-step on a
+   phone: large type, ingredient checkboxes, screen wake-lock, "Meanwhile…"
+   callouts, wait timers, caveats surfaced prominently, step photos inline.
+6. As a cook, I can **scale servings** and quantities update.
+7. As the owner, after cooking I log a **cook log** entry (date, rating,
+   "what I'd change") so the recipe improves each iteration.
+8. As the owner, I share via an **unlisted link**; anyone with it can view,
+   scale, and print. Search and tag filters help me find recipes fast.
 
-**Success looks like:** the owner enters a recipe once, cooks it three months
-later from cook mode without consulting the original source, and a friend
-recreates it from a texted link.
+**Success looks like:** the sister's cookie recipe goes in from two photos plus
+a paragraph of caveats, and three months later either of us bakes an identical
+batch from cook mode without consulting the Instagram post.
 
 ## Assumptions
 
-> Surfaced per spec-driven-development; correct any of these and the spec gets
-> updated before implementation.
-
-1. **Single-owner editing** — friends are view-only; no multi-user accounts,
-   comments, or friend logins in v1.
-2. **Web app, mobile-first** — the primary cooking surface is a phone in the
-   kitchen; no native app.
-3. **Stack:** Next.js (App Router) + TypeScript + Tailwind CSS; Prisma ORM;
-   SQLite for local dev, Postgres (Neon / Vercel Postgres) in production;
-   deployed on Vercel.
-4. **Auth:** one owner account via Auth.js (credentials provider with a single
-   configured email + password hash from env). No sign-up flow.
-5. **Sharing model:** per-recipe visibility of `private` (owner only) or
-   `unlisted` (anyone with the slug link; `noindex`). A public gallery is out
-   of scope for v1.
-6. **Images** stored via Vercel Blob (or local `public/uploads` in dev); one
-   hero image per recipe in v1.
-7. Recipe **import from URL** (schema.org parsing) is a stretch goal, not v1.
+1. **Single-owner editing**; friends are view-only. No multi-user accounts in v1.
+2. **Web app, mobile-first** — the primary cooking/baking surface is a phone.
+3. **Stack:** Next.js (App Router) + TypeScript + Tailwind; Prisma; SQLite dev
+   / Postgres prod; Vercel hosting.
+4. **Auth:** one owner account via Auth.js credentials from env.
+5. **Sharing:** per-recipe `PRIVATE` / `UNLISTED` visibility; unlisted slug
+   links are the sharing capability; `noindex` on unlisted pages.
+6. **AI extraction** uses the Anthropic API (official TypeScript SDK,
+   `@anthropic-ai/sdk`), model **`claude-opus-4-8`**, sending photos as vision
+   image blocks and forcing a schema-valid result with structured outputs
+   (`client.messages.parse` + `zodOutputFormat` over the same Zod recipe
+   schema the editor uses). Requires an `ANTHROPIC_API_KEY` env var; import is
+   an owner-only feature so per-request cost is negligible.
+7. **Images** stored via Vercel Blob (local dir in dev): hero image, step
+   photos, and original source photos.
+8. "Baking support" means the *structural* features above (waits/timers,
+   parallel steps, precise quantities, oven temps in steps) — not a separate
+   recipe type. Cooking vs. baking is just a tag.
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router, React Server Components), TypeScript strict
+- **Framework:** Next.js 15 (App Router, RSC), TypeScript strict
 - **Styling:** Tailwind CSS
-- **Data:** Prisma ORM — SQLite (dev), Postgres (prod)
+- **Data:** Prisma — SQLite (dev), Postgres (prod)
 - **Auth:** Auth.js (NextAuth v5), single credentials-based owner account
-- **Images:** Vercel Blob storage
-- **Validation:** Zod schemas shared between forms and server actions
+- **AI import:** `@anthropic-ai/sdk`, `claude-opus-4-8`, vision + structured outputs (Zod)
+- **Images:** Vercel Blob
+- **Validation:** Zod schemas shared between forms, server actions, and AI extraction
 - **Testing:** Vitest (unit) + Playwright (e2e)
 - **Hosting:** Vercel
 
@@ -75,25 +101,25 @@ Build:  npm run build
 Test:   npm test                 # vitest run
 E2E:    npm run test:e2e         # playwright test
 Lint:   npm run lint
-Types:  npm run typecheck        # tsc --noEmit
-DB:     npx prisma migrate dev   # apply schema changes locally
-Seed:   npm run db:seed
+Types:  npm run typecheck
+DB:     npx prisma migrate dev
+Seed:   npm run db:seed          # seeds the sister's cookie recipe + 2 others
 ```
 
 ## Project Structure
 
 ```
-docs/               → Spec and architecture decision records
-tasks/              → plan.md and todo.md (living planning docs)
+docs/               → Spec, ADRs, captured recipe references
+docs/recipes/       → Human-readable recipe captures (pre-app provenance)
+tasks/              → plan.md and todo.md
 prisma/             → schema.prisma, migrations, seed script
-src/app/            → Routes (App Router)
-  (owner)/          → Authenticated owner routes: dashboard, recipe editor
+src/app/
+  (owner)/          → Authenticated: dashboard, editor, import review
   r/[slug]/         → Public/unlisted recipe view + cook mode + print view
-  api/              → Route handlers only where server actions don't fit
-src/components/     → Shared UI components (one folder per component)
-src/lib/            → Domain logic: scaling math, slug generation, auth, db client
-src/lib/schemas/    → Zod schemas (single source of truth for validation)
-tests/              → Vitest unit tests (mirrors src/ layout)
+src/components/     → Shared UI (folder per component)
+src/lib/            → Domain logic: scaling, slugs, auth, db, extraction
+src/lib/schemas/    → Zod schemas (single source of truth — forms, actions, AI)
+tests/              → Vitest unit tests
 e2e/                → Playwright specs
 ```
 
@@ -101,54 +127,80 @@ e2e/                → Playwright specs
 
 ```
 Recipe
-  id          cuid PK
-  slug        unique, URL-safe, unguessable suffix (e.g. miso-ramen-x7k2f9)
-  title       string
-  description string?
-  servings    int            # baseline for scaling
-  prepMinutes int?
-  cookMinutes int?
-  sourceUrl   string?
-  imageUrl    string?
-  visibility  enum: PRIVATE | UNLISTED
-  tags        Tag[] (m:n)
-  ingredients Ingredient[]
-  steps       Step[]
-  cookLogs    CookLog[]
+  id, slug (unique, unguessable suffix), title, description
+  servings int, servingsUnit string?        # "cookies", "people"
+  prepMinutes int?, cookMinutes int?
+  sourceUrl string?, sourceNote string?     # "@emijujuu on Instagram"
+  imageUrl string?                          # hero image
+  visibility enum: PRIVATE | UNLISTED
+  isDraft boolean                           # true for unreviewed AI imports
+  tags Tag[] (m:n)                          # includes "baking", "cooking"
+  ingredients Ingredient[], steps Step[], cookLogs CookLog[]
+  sourceImages SourceImage[]                # the photos a recipe was imported from
   createdAt / updatedAt
 
 Ingredient
-  id, recipeId FK, sortOrder int
-  quantity    decimal?       # nullable: "salt to taste"
-  unit        string?        # free-text unit ("g", "cup", "clove")
-  name        string
-  note        string?        # "finely chopped"
-  groupName   string?        # section header: "For the sauce"
+  id, recipeId, sortOrder
+  quantity decimal?                         # nullable: "to taste"
+  unit string?, name string
+  note string?                              # "finely chopped", "C7 instant coffee, not espresso powder"
+  groupName string?                         # "For the dry mix"
 
 Step
-  id, recipeId FK, sortOrder int
-  text        string
-  timerMinutes int?          # optional per-step timer hint
+  id, recipeId, sortOrder
+  text string
+  kind enum: ACTIVE | WAIT                  # WAIT = passive (cool, chill, proof, rest)
+  meanwhile boolean                         # runs alongside the previous non-meanwhile step
+  timerMinutes int?                         # cook mode offers a timer (waits & timed actives)
+  caveat string?                            # highlighted warning/tip ("butter must be cool or the egg cooks")
+  photos StepPhoto[]
+
+StepPhoto
+  id, stepId, url, caption string?, sortOrder
+
+SourceImage
+  id, recipeId, url, sortOrder              # original screenshots/cards used for import
 
 CookLog
-  id, recipeId FK
-  cookedAt    date
-  rating      int? (1–5)
-  notes       string?        # "used 2x garlic — keep it"
+  id, recipeId, cookedAt date, rating int? (1–5), notes string?
 
 Tag
   id, name unique
 ```
 
-**Key contract decisions** (per api-and-interface-design):
+**Key contract decisions:**
 
-- The **slug is the sharing capability**: unlisted access = knowing the slug.
-  Slugs embed a random suffix so they're unguessable; changing visibility to
-  PRIVATE revokes access without deleting the recipe.
-- Ingredient `quantity` is a decimal, never a string — scaling is arithmetic,
-  not parsing. Display formatting (½, ⅓) is a pure function in `src/lib`.
-- All mutations go through **server actions validated by Zod schemas**; the
-  same schema drives the form and the server, so client and server can't drift.
+- **`meanwhile` is an ordering flag, not a graph.** Steps stay a flat ordered
+  list; a `meanwhile: true` step executes concurrently with the most recent
+  step above it that isn't `meanwhile`. This expresses "mix dry while butter
+  browns" without a dependency-graph editor. Cook mode renders consecutive
+  meanwhile steps as a "Meanwhile:" panel on their anchor step.
+- **`WAIT` steps get first-class treatment in cook mode**: a big timer, and
+  the "Meanwhile" panel of any parallel prep. Chilling/proofing/cooling are
+  where baking recipes actually fail — they're steps, not footnotes.
+- **One Zod recipe schema, three consumers:** the editor form, the server
+  actions, and the AI extraction (`zodOutputFormat`). The model literally
+  cannot return a draft the editor can't open.
+- **AI imports land as `isDraft: true`** and are never publicly visible until
+  the owner reviews and publishes. Source images stay attached.
+- Slug-as-capability sharing and decimal-quantity scaling carry over from Rev 1.
+
+## AI Photo Import (pipeline)
+
+1. Owner uploads 1+ photos and optionally types caveats
+   ("she sifts the flour and mixes dry while the butter browns…").
+2. Server action calls Claude (`claude-opus-4-8`) with the images as vision
+   blocks + the caveat text, using structured outputs against the Zod recipe
+   schema (which includes `kind`, `meanwhile`, `timerMinutes`, `caveat` per
+   step). Prompt instructs the model to: OCR faithfully, weave caveats into
+   the right steps, mark parallel work as `meanwhile`, mark passive time as
+   `WAIT` with a timer, keep uncertainties as explicit `caveat` questions
+   rather than guessing.
+3. Draft recipe (`isDraft: true`) is created with source images attached;
+   owner is redirected to the editor to review, answer flagged questions, and
+   publish.
+4. Failures (unreadable photo, refusal) surface as a friendly error; nothing
+   is persisted.
 
 ## Code Style
 
@@ -163,50 +215,50 @@ export function scaleQuantity(
 }
 ```
 
-- Components: PascalCase folder-per-component, colocated tests.
-- Domain logic lives in `src/lib` as pure functions; components stay thin.
-- Server components by default; `"use client"` only where interaction demands it.
+- Folder-per-component, colocated tests; server components by default.
+- Domain logic (scaling, fractions, slugs, extraction prompt assembly) as pure
+  functions in `src/lib`.
 - No `any`; Zod-inferred types flow from `src/lib/schemas`.
 
 ## Testing Strategy
 
-- **Unit (Vitest):** scaling math, quantity formatting (fractions), slug
-  generation, Zod schemas, visibility rules. High coverage here — this is the
-  logic that makes recipes "recreatable."
-- **E2E (Playwright):** the three critical journeys — (1) owner creates a
-  recipe and sees it rendered, (2) anonymous visitor opens an unlisted link
-  and scales servings, (3) anonymous visitor is blocked from a PRIVATE recipe
-  and from all edit routes.
-- Tests run in CI on every push; merge blocked on red.
+- **Unit (Vitest):** scaling and fraction formatting; slug generation; the Zod
+  recipe schema (including meanwhile/wait/caveat shapes); extraction response
+  handling (given a canned model response, the right draft is built);
+  visibility rules.
+- **E2E (Playwright):** (1) owner creates a recipe with meanwhile + wait steps
+  and sees cook mode render the "Meanwhile" panel and timer; (2) anonymous
+  visitor opens an unlisted link and scales servings; (3) PRIVATE recipe and
+  draft recipes 404 for anonymous visitors; (4) import review flow with a
+  mocked Anthropic response.
+- The AI call itself is mocked in tests; one manual smoke test against the
+  real API before shipping the import feature.
 
 ## Boundaries
 
-- **Always:** run `lint`, `typecheck`, and `test` before committing; validate
-  every mutation server-side with Zod; check owner session in every server
-  action that writes.
+- **Always:** run lint/typecheck/test before commits; validate mutations
+  server-side with Zod; check owner session on every write and on the import
+  endpoint; mock the Anthropic API in automated tests.
 - **Ask first:** adding dependencies beyond the listed stack; schema changes
-  after the first migration ships; changing the sharing/visibility model;
-  anything that adds accounts for friends.
-- **Never:** commit secrets or `.env`; expose PRIVATE recipes through any
-  route (including image URLs); serve edit endpoints without auth; remove
-  failing tests to get green.
+  after first migration ships; changing the sharing model; adding friend
+  accounts; any feature that calls the AI on behalf of anonymous visitors.
+- **Never:** commit secrets (`ANTHROPIC_API_KEY`, DB URLs); expose PRIVATE or
+  draft recipes through any route; auto-publish an AI import without owner
+  review; remove failing tests to get green.
 
 ## Success Criteria
 
-- [ ] Owner can create, edit, and delete a recipe with grouped ingredients and ordered steps.
-- [ ] Search by title/ingredient and tag filtering return correct results.
-- [ ] Cook mode is usable on a 375px-wide phone: legible steps, checkable ingredients, screen wake-lock.
-- [ ] Changing servings rescales all numeric quantities correctly (unit tests cover halving, doubling, thirds).
-- [ ] An unlisted recipe link renders for a logged-out visitor; a PRIVATE one returns 404 for them.
-- [ ] Cook log entries persist and display newest-first on the recipe page.
-- [ ] Print view fits a typical recipe on one page.
-- [ ] Lighthouse mobile performance ≥ 90 on the recipe view page.
+- [ ] Owner can create/edit/delete recipes with grouped ingredients, ordered steps, meanwhile flags, wait steps with timers, per-step caveats, and step photos.
+- [ ] The sister's cookie recipe (seed data) renders correctly: steps 2–3 appear as "Meanwhile" alongside browning, cooling and chilling show timers, caveats are visually prominent.
+- [ ] Photo import: given the Instagram screenshot + caveat text, a structured draft is created with parallel/wait structure and the C7-coffee substitution captured; owner reviews and publishes.
+- [ ] Cook mode is usable one-handed at 375px: legible steps, checkboxes, wake-lock, timers, meanwhile panels, step photos.
+- [ ] Serving scaler rescales all numeric quantities (unit-tested for halving/doubling/thirds).
+- [ ] Unlisted links render for logged-out visitors; PRIVATE and draft recipes 404 for them.
+- [ ] Cook log persists and displays newest-first.
+- [ ] Print view fits a typical recipe on one page; Lighthouse mobile ≥ 90 on the recipe page.
 
 ## Open Questions
 
-1. Should friends be able to leave a comment/reaction on a shared recipe, or is
-   view-only enough for v1? (Spec assumes view-only.)
-2. Is import-from-URL (paste a link, get a pre-filled recipe) wanted enough to
-   pull into v1, or fine as a fast-follow?
-3. Do you want a public "all my shared recipes" gallery page, or strictly
-   link-by-link sharing?
+1. Recipe-specific: the four questions in `docs/recipes/brown-butter-chocolate-chip-cookies.md` (C7 amount, baking soda placement, when sugars go in, batch yield).
+2. Should import accept multiple recipes per photo batch, or one recipe per import? (Assumed: one.)
+3. Voice caveats (record audio → transcribe) — v1 assumes typed caveats only.

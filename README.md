@@ -1,29 +1,48 @@
 # Cook-sama
 
-A personal recipe-tracking website: capture the recipes you cook, recreate them
-reliably (scaled servings, step-by-step cook mode, notes from past attempts),
-and share them with friends via a simple link — no account needed to view.
+A recipe-tracking website for cooking **and baking**: capture recipes (by hand
+or by photographing a source and letting AI extract it), recreate them
+reliably — parallel "meanwhile" steps, wait timers, technique caveats, step
+photos, serving scaling, cook mode — and share them with friends via a simple
+link, no account needed to view.
+
+The founding use case: capturing exactly how my sister makes her brown-butter
+chocolate chip cookies, caveats and all. See
+[`docs/recipes/brown-butter-chocolate-chip-cookies.md`](docs/recipes/brown-butter-chocolate-chip-cookies.md).
 
 ## Status
 
-Architecture phase. The project follows a spec-driven workflow:
+Architecture phase complete (spec + plan). Next up: `/build` Task 1.
 
 | Document | Purpose |
 |---|---|
-| [`docs/spec.md`](docs/spec.md) | What we're building, tech stack, data model, boundaries, success criteria |
-| [`tasks/plan.md`](tasks/plan.md) | Implementation plan: architecture decisions, phases, risks |
-| [`tasks/todo.md`](tasks/todo.md) | Checklist of implementable tasks with acceptance criteria |
+| [`docs/spec.md`](docs/spec.md) | What we're building: features, data model, AI import pipeline, boundaries, success criteria |
+| [`tasks/plan.md`](tasks/plan.md) | Architecture decisions, dependency graph, 5 phases with checkpoints, risks |
+| [`tasks/todo.md`](tasks/todo.md) | 21 implementable tasks with acceptance criteria |
+| [`docs/recipes/`](docs/recipes/) | Recipes captured before the app exists (provenance + seed data source) |
 
 ## Development workflow (agent-skills plugin)
 
 This project is developed with the [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
-plugin for Claude Code, which provides `/spec`, `/plan`, `/build`, `/test`,
-`/review`, and `/ship` commands. It is installed locally in the repo (git-ignored):
+plugin for Claude Code, installed locally in the repo (git-ignored):
 
 ```bash
 git clone https://github.com/addyosmani/agent-skills.git
 claude --plugin-dir ./agent-skills
 ```
 
-Typical loop once the spec exists: `/plan` → `/build` (one task at a time,
-test-driven) → `/review` → `/ship`.
+Its 8 slash commands are used **chronologically** through the lifecycle:
+
+| # | Command | Phase | Status |
+|---|---------|-------|--------|
+| 1 | `/spec` | Define what to build → `docs/spec.md` | ✅ done (rev 2) |
+| 2 | `/plan` | Break into tasks → `tasks/plan.md`, `tasks/todo.md` | ✅ done (rev 2) |
+| 3 | `/build` | Implement one task at a time, test-driven | ⬜ next |
+| 4 | `/test` | Prove it works | ⬜ |
+| 5 | `/review` | Five-axis review before merge | ⬜ |
+| 6 | `/webperf` | Audit web performance (pairs with Task 20) | ⬜ |
+| 7 | `/code-simplify` | Clarity over cleverness | ⬜ |
+| 8 | `/ship` | Deploy to production (pairs with Task 21) | ⬜ |
+
+Tip: `/build auto` runs the whole task list autonomously after one plan
+approval, still test-driven and committed per task.
