@@ -35,14 +35,18 @@ differs from the source in the ways marked ⚠️ CAVEAT.
 4. **Wait: let the browned butter cool**, ~15 minutes per the source.
    ⚠️ CAVEAT: don't rush this — the egg goes in later and hot butter would
    cook it. *(passive wait, timer ≈ 15 min)*
-5. **Whip the egg in a stand mixer until foamy.**
-   ⚠️ CAVEAT: this is her main departure from the source, which creams the
-   butter and sugars first and then adds the egg.
-6. **Add the rest of the wet ingredients** to the foamy egg: cooled browned
-   butter, brown sugar, white sugar, vanilla. *(assumption: sugars join the
-   wet mix here since she skips the creaming step — confirm)*
-7. **Add the dry ingredients** and mix until *just* combined (per source —
-   don't overmix).
+5. **Whip the egg in a stand mixer on HIGH until it foams white.**
+   ⚠️ CAVEAT: "foamed white" is the visual cue to stop waiting — this is her
+   main departure from the source, which creams the butter and sugars first
+   and then adds the egg. *(a step photo of the white foam would be ideal —
+   none exists yet; take one next bake)*
+6. **Add the rest of the wet ingredients** to the foamy egg, in this order:
+   **sugars first** (brown + white), **then vanilla**, then the cooled
+   browned butter. *(sugar-before-vanilla order confirmed by owner; butter's
+   exact position in the order assumed last — confirm)*
+7. **Slow the mixer down, then add the dry ingredients.**
+   ⚠️ CAVEAT: drop the mixer speed before the dry mix goes in (or it goes
+   everywhere / overmixes). Mix until *just* combined, per the source.
 8. **Fold in the chocolate.**
 9. **Wait: chill the dough** — at least 1 hour, ideally ~3 hours. *(passive
    wait, timer ≈ 180 min)*
@@ -52,5 +56,6 @@ differs from the source in the ways marked ⚠️ CAVEAT.
 
 1. How much C7 coffee replaces the ½ tsp espresso powder — the whole packet or a measured amount?
 2. Does the baking soda go into her dry bowl (source says yes; your list of dry ingredients didn't include it)?
-3. Do the sugars go in with the wet ingredients at step 6, or somewhere else?
+3. ~~Do the sugars go in with the wet ingredients at step 6?~~ **Answered:** yes — mixer on high until the egg foams white, then sugars first, then vanilla. Only the browned butter's exact position in that order is still assumed (last).
 4. Roughly how many cookies does a batch make (for the serving scaler)?
+5. New: grab a photo of the white egg foam on the next bake — it's the step that most needs a visual.
