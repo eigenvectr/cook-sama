@@ -18,6 +18,14 @@ dist/
 # Database (local dev)
 *.db
 *.db-journal
+prisma/dev.db*
+
+# Local image uploads (dev storage backend)
+public/uploads/
+
+# Test artifacts
+test-results/
+playwright-report/
 
 # Misc
 .DS_Store

@@ -1,0 +1,103 @@
+// SQLite in development. For production (Vercel + Postgres) switch the
+// provider to "postgresql" — see docs/deploy.md. SQLite has no native enums,
+// so `visibility` and `kind` are strings validated by the Zod schemas.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Recipe {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  title        String
+  description  String?
+  servings     Int           @default(4)
+  servingsUnit String? // "cookies", "people", ...
+  prepMinutes  Int?
+  cookMinutes  Int?
+  sourceUrl    String?
+  sourceNote   String? // "@emijujuu on Instagram"
+  imageUrl     String? // hero image
+  visibility   String        @default("PRIVATE") // PRIVATE | UNLISTED
+  isDraft      Boolean       @default(false)
+  reviewNotes  String? // open questions flagged by AI import, shown in the draft banner
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ingredients  Ingredient[]
+  steps        Step[]
+  cookLogs     CookLog[]
+  sourceImages SourceImage[]
+  tags         RecipeTag[]
+}
+
+model Ingredient {
+  id        String  @id @default(cuid())
+  recipeId  String
+  recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  sortOrder Int
+  quantity  Float? // null = "to taste"
+  unit      String?
+  name      String
+  note      String? // "finely chopped", "C7 instant coffee, not espresso powder"
+  groupName String? // "For the dry mix"
+}
+
+model Step {
+  id           String      @id @default(cuid())
+  recipeId     String
+  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  sortOrder    Int
+  text         String
+  kind         String      @default("ACTIVE") // ACTIVE | WAIT (passive: cool, chill, proof)
+  meanwhile    Boolean     @default(false) // runs alongside the previous non-meanwhile step
+  timerMinutes Int?
+  caveat       String? // highlighted warning/tip
+  photos       StepPhoto[]
+}
+
+model StepPhoto {
+  id        String  @id @default(cuid())
+  stepId    String
+  step      Step    @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  sortOrder Int     @default(0)
+}
+
+model SourceImage {
+  id        String @id @default(cuid())
+  recipeId  String
+  recipe    Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int    @default(0)
+}
+
+model CookLog {
+  id        String   @id @default(cuid())
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cookedAt  DateTime @default(now())
+  rating    Int? // 1-5
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id      String      @id @default(cuid())
+  name    String      @unique
+  recipes RecipeTag[]
+}
+
+model RecipeTag {
+  recipeId String
+  tagId    String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([recipeId, tagId])
+}
